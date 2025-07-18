@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birthday Firework</title>
+    <title>烟花动画</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script>
@@ -55,22 +55,22 @@
             }
             .birthday-text {
                 position: fixed;
-                top: 15%;
+                top: 10%; /* 整体位置上移 */
                 left: 0;
                 right: 0;
                 text-align: center;
-                font-size: clamp(2rem, 8vw, 5rem);
+                font-size: clamp(1.5rem, 6vw, 4rem); /* 减小字体大小 */
                 font-weight: bold;
                 z-index: 10;
                 opacity: 0;
                 display: flex;
-                flex-direction: column; /* 修改为垂直排列 */
+                flex-direction: column;
                 align-items: center;
             }
             .line {
                 display: flex;
                 justify-content: center;
-                margin: 0.5rem 0;
+                margin: 0.3rem 0; /* 减小行间距 */
             }
             .letter {
                 display: inline-block;
@@ -101,6 +101,16 @@
             // 随机数生成函数
             function random(min, max) {
                 return Math.random() * (max - min) + min;
+            }
+
+            // Fisher-Yates 洗牌算法
+            function shuffleArray(array) {
+                const newArray = [...array];
+                for (let i = newArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                }
+                return newArray;
             }
 
             // 创建烟花升空效果
@@ -319,8 +329,8 @@
             function animateText() {
                 const textElement = document.getElementById('birthdayText');
                 
-                // 分成两行
-                const lines = ["HAPPY", "BIRTHDAY"];
+                // 分成三行（新增第三行 "MR.X"）
+                const lines = ["HAPPY", "BIRTHDAY", "MR.X"];
                 let totalDelay = 0;
                 
                 // 清空文本元素
@@ -332,13 +342,28 @@
                     lineElement.className = 'line';
                     textElement.appendChild(lineElement);
                     
+                    // 创建字母数组并打乱顺序（记录原始索引）
+                    const shuffledChars = shuffleArray(
+                        lineText.split('').map((char, index) => ({ char, index }))
+                    );
+                    
+                    // 创建占位元素保持布局
+                    const placeholders = [];
+                    for (let i = 0; i < lineText.length; i++) {
+                        const placeholder = document.createElement('span');
+                        placeholder.className = 'letter';
+                        placeholder.textContent = ' ';
+                        lineElement.appendChild(placeholder);
+                        placeholders.push(placeholder);
+                    }
+                    
                     // 为每个字母创建span元素并添加动画
                     let lineDelay = 0;
                     
-                    for (let i = 0; i < lineText.length; i++) {
+                    shuffledChars.forEach((item, i) => {
                         const letter = document.createElement('span');
                         letter.className = 'letter';
-                        letter.textContent = lineText[i];
+                        letter.textContent = item.char;
                         
                         // 随机颜色
                         const randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -347,16 +372,22 @@
                         // 添加文字阴影增强效果
                         letter.style.textShadow = `0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px ${randomColor}40`;
                         
-                        // 每个字母随机1-2秒的延迟
-                        const randomDelay = random(1, 2);
+                        // 减小行与行之间的延迟
+                        const randomDelay = random(0.5, 1.5); // 原先是 random(1, 2)
                         lineDelay += randomDelay;
                         
-                        // 总延迟 = 行延迟 + 行索引 * 2秒（行与行之间有额外的间隔）
-                        const totalLetterDelay = totalDelay + lineDelay + (lineIndex * 2);
+                        // 减小行与行之间的间隔
+                        const totalLetterDelay = totalDelay + lineDelay + (lineIndex * 1.5); // 原先是 (lineIndex * 2)
+                        
+                        // 使用原始索引确保字母出现在正确位置
+                        if (placeholders[item.index]) {
+                            placeholders[item.index].replaceWith(letter);
+                        } else {
+                            lineElement.appendChild(letter);
+                        }
                         
                         letter.style.animation = `fadeIn 0.5s ease-out ${totalLetterDelay}s forwards`;
-                        lineElement.appendChild(letter);
-                    }
+                    });
                     
                     // 更新总行延迟
                     totalDelay += lineDelay;
