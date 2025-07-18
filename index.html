@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birthday fireworks</title>
+    <title>烟花动画</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script>
@@ -51,15 +52,15 @@
                 width: 2px;
                 height: 18px;
                 transform: rotate(0deg);
-                background: linear-gradient(to top, rgba(255,255,255,0), rgba(255,255,255,0.8));
+                background: linear-gradient(to top, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.8));
             }
             .birthday-text {
                 position: fixed;
-                top: 10%; /* 整体位置上移 */
+                top: 10%;
                 left: 0;
                 right: 0;
                 text-align: center;
-                font-size: clamp(1.5rem, 6vw, 4rem); /* 减小字体大小 */
+                font-size: clamp(1.5rem, 6vw, 4rem);
                 font-weight: bold;
                 z-index: 10;
                 opacity: 0;
@@ -70,7 +71,7 @@
             .line {
                 display: flex;
                 justify-content: center;
-                margin: 0.3rem 0; /* 减小行间距 */
+                margin: 0.3rem 0;
             }
             .letter {
                 display: inline-block;
@@ -81,6 +82,7 @@
         }
     </style>
 </head>
+
 <body class="bg-gradient-to-b from-gray-900 to-black min-h-screen overflow-hidden">
     <div id="fireworksContainer" class="fixed inset-0 z-0"></div>
     <div class="birthday-text" id="birthdayText"></div>
@@ -93,8 +95,8 @@
 
             // 烟花颜色数组
             const colors = [
-                '#FF3366', '#FF9933', '#FFFF33', '#33FF33', '#3399FF', 
-                '#9933FF', '#FF33FF', '#FF6666', '#FFCC66', '#CCFF66', 
+                '#FF3366', '#FF9933', '#FFFF33', '#33FF33', '#3399FF',
+                '#9933FF', '#FF33FF', '#FF6666', '#FFCC66', '#CCFF66',
                 '#66FF66', '#66FFCC', '#66CCFF', '#6666FF', '#CC66FF'
             ];
 
@@ -130,7 +132,7 @@
                 setTimeout(() => {
                     firework.style.opacity = '1';
                     firework.style.transform = 'scale(1)';
-                    
+
                     const animation = firework.animate([
                         { bottom: '0px', left: `${x}px` },
                         { bottom: `${targetY}px`, left: `${targetX}px` }
@@ -140,130 +142,212 @@
                     });
 
                     animation.onfinish = () => {
-                        // 烟花到达目标位置后爆炸
-                        explodeFirework(targetX, targetY, color);
+                        // 随机选择爆炸类型
+                        const explosionTypes = ['default', 'ring', 'pulse', 'star'];
+                        const explosionType = explosionTypes[Math.floor(Math.random() * explosionTypes.length)];
+                        explodeFirework(targetX, targetY, color, explosionType);
                         firework.remove();
                     };
                 }, 50);
             }
 
             // 创建烟花爆炸效果
-            function explodeFirework(x, y, color) {
-                // 创建多层爆炸效果
-                const layers = [
-                    { count: 30, size: 1.2, speed: 1.3, lineRatio: 0.5, delay: 0 },
-                    { count: 50, size: 1, speed: 1, lineRatio: 0.4, delay: 100 },
-                    { count: 40, size: 0.8, speed: 0.7, lineRatio: 0.3, delay: 200 }
-                ];
-                
-                layers.forEach(layer => {
-                    setTimeout(() => {
-                        // 为每层创建粒子
-                        for (let i = 0; i < layer.count; i++) {
-                            const isLine = i < layer.count * layer.lineRatio;
-                            const particle = document.createElement('div');
-                            
-                            if (isLine) {
-                                particle.className = 'particle particle-line';
-                            } else {
-                                particle.className = 'particle particle-dot';
-                            }
-                            
-                            // 使用主色调或随机颜色，增加颜色变化
-                            const useMainColor = Math.random() > 0.4;
-                            const particleColor = useMainColor ? color : colors[Math.floor(Math.random() * colors.length)];
-                            
-                            if (!isLine) {
-                                particle.style.backgroundColor = particleColor;
-                            } else {
-                                // 线条使用渐变，增加透明度变化
-                                const opacityStart = Math.random() > 0.5 ? '40' : '60'; // 起始透明度
-                                const opacityEnd = Math.random() > 0.5 ? 'A0' : 'FF';   // 结束透明度
-                                particle.style.background = `linear-gradient(to top, ${particleColor}${opacityStart}, ${particleColor}${opacityEnd})`;
-                            }
-                            
-                            particle.style.left = `${x}px`;
-                            particle.style.bottom = `${y}px`;
-                            
-                            if (isLine) {
-                                // 设置线条粒子的旋转角度，增加随机性
-                                const angle = random(0, Math.PI * 2);
-                                particle.style.transform = `rotate(${angle}rad)`;
-                                
-                                // 线条长度随机变化，增强层次感
-                                const lineLength = random(14, 22);
-                                particle.style.height = `${lineLength}px`;
-                            }
-                            
-                            container.appendChild(particle);
-
-                            // 随机角度和距离
-                            const angle = random(0, Math.PI * 2);
-                            const distance = random(30, 150) * layer.speed;
-                            const vx = Math.cos(angle) * distance;
-                            const vy = Math.sin(angle) * distance;
-                            
-                            // 添加轻微的重力效果
-                            const gravityEffect = random(0, 25);
-                            
-                            // 为不同层设置不同的持续时间
-                            const baseDuration = layer === layers[0] ? 1.2 : layer === layers[1] ? 1.6 : 2.0;
-                            const duration = random(baseDuration, baseDuration + 0.6) * 1000;
-                            
-                            // 粒子动画 - 使用更平滑的贝塞尔曲线
-                            const animation = particle.animate([
-                                { 
-                                    left: `${x}px`, 
-                                    bottom: `${y}px`,
-                                    opacity: 1,
-                                    transform: isLine ? `rotate(${angle}rad) scale(${layer.size})` : `scale(${layer.size})`
-                                },
-                                { 
-                                    left: `${x + vx}px`, 
-                                    bottom: `${y + vy - gravityEffect}px`,
-                                    opacity: 0.8,
-                                    transform: isLine ? `rotate(${angle + random(-0.3, 0.3)}rad) scale(${layer.size * 0.8})` : `scale(${layer.size * 0.8})`
-                                },
-                                { 
-                                    left: `${x + vx * 1.1}px`, 
-                                    bottom: `${y + vy * 1.1 - gravityEffect * 2}px`,
-                                    opacity: 0,
-                                    transform: isLine ? `rotate(${angle + random(-0.5, 0.5)}rad) scale(0)` : `scale(0)`
-                                }
-                            ], {
-                                duration: duration,
-                                easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)'
-                            });
-
-                            animation.onfinish = () => {
-                                particle.remove();
-                            };
+            function explodeFirework(x, y, color, explosionType = 'default') {
+                switch (explosionType) {
+                    case 'ring':
+                        // 环形爆炸
+                        const ringParticleCount = 60;
+                        const ringRadius = 100;
+                        for (let i = 0; i < ringParticleCount; i++) {
+                            const angle = (i / ringParticleCount) * (Math.PI * 2);
+                            const particle = createParticle(x, y, color);
+                            const vx = Math.cos(angle) * ringRadius;
+                            const vy = Math.sin(angle) * ringRadius;
+                            animateParticle(particle, x, y, vx, vy);
                         }
-                    }, layer.delay);
-                });
-                
+                        break;
+                    case 'pulse':
+                        // 脉冲爆炸
+                        const pulseCount = 3;
+                        const pulseDelay = 200;
+                        const pulseParticleCount = 40;
+                        for (let j = 0; j < pulseCount; j++) {
+                            setTimeout(() => {
+                                for (let i = 0; i < pulseParticleCount; i++) {
+                                    const particle = createParticle(x, y, color);
+                                    const angle = random(0, Math.PI * 2);
+                                    const distance = random(30, 150);
+                                    const vx = Math.cos(angle) * distance;
+                                    const vy = Math.sin(angle) * distance;
+                                    animateParticle(particle, x, y, vx, vy);
+                                }
+                            }, j * pulseDelay);
+                        }
+                        break;
+                    case 'star':
+                        // 星形爆炸
+                        const starPoints = 5;
+                        const starRadius = 120;
+                        const starInnerRadius = 50;
+                        for (let i = 0; i < starPoints * 2; i++) {
+                            const radius = i % 2 === 0 ? starRadius : starInnerRadius;
+                            const angle = (i / (starPoints * 2)) * (Math.PI * 2);
+                            const particle = createParticle(x, y, color);
+                            const vx = Math.cos(angle) * radius;
+                            const vy = Math.sin(angle) * radius;
+                            animateParticle(particle, x, y, vx, vy);
+                        }
+                        break;
+                    default:
+                        // 原有的爆炸效果
+                        const layers = [
+                            { count: 30, size: 1.2, speed: 1.3, lineRatio: 0.5, delay: 0 },
+                            { count: 50, size: 1, speed: 1, lineRatio: 0.4, delay: 100 },
+                            { count: 40, size: 0.8, speed: 0.7, lineRatio: 0.3, delay: 200 }
+                        ];
+
+                        layers.forEach(layer => {
+                            setTimeout(() => {
+                                for (let i = 0; i < layer.count; i++) {
+                                    const isLine = i < layer.count * layer.lineRatio;
+                                    const particle = document.createElement('div');
+
+                                    if (isLine) {
+                                        particle.className = 'particle particle-line';
+                                    } else {
+                                        particle.className = 'particle particle-dot';
+                                    }
+
+                                    const useMainColor = Math.random() > 0.4;
+                                    const particleColor = useMainColor ? color : colors[Math.floor(Math.random() * colors.length)];
+
+                                    if (!isLine) {
+                                        particle.style.backgroundColor = particleColor;
+                                    } else {
+                                        const opacityStart = Math.random() > 0.5 ? '40' : '60';
+                                        const opacityEnd = Math.random() > 0.5 ? 'A0' : 'FF';
+                                        particle.style.background = `linear-gradient(to top, ${particleColor}${opacityStart}, ${particleColor}${opacityEnd})`;
+                                    }
+
+                                    particle.style.left = `${x}px`;
+                                    particle.style.bottom = `${y}px`;
+
+                                    if (isLine) {
+                                        const angle = random(0, Math.PI * 2);
+                                        particle.style.transform = `rotate(${angle}rad)`;
+                                        const lineLength = random(14, 22);
+                                        particle.style.height = `${lineLength}px`;
+                                    }
+
+                                    container.appendChild(particle);
+
+                                    const angle = random(0, Math.PI * 2);
+                                    const distance = random(30, 150) * layer.speed;
+                                    const vx = Math.cos(angle) * distance;
+                                    const vy = Math.sin(angle) * distance;
+                                    const gravityEffect = random(0, 25);
+                                    const baseDuration = layer === layers[0] ? 1.2 : layer === layers[1] ? 1.6 : 2.0;
+                                    const duration = random(baseDuration, baseDuration + 0.6) * 1000;
+
+                                    const animation = particle.animate([
+                                        {
+                                            left: `${x}px`,
+                                            bottom: `${y}px`,
+                                            opacity: 1,
+                                            transform: isLine ? `rotate(${angle}rad) scale(${layer.size})` : `scale(${layer.size})`
+                                        },
+                                        {
+                                            left: `${x + vx}px`,
+                                            bottom: `${y + vy - gravityEffect}px`,
+                                            opacity: 0.8,
+                                            transform: isLine ? `rotate(${angle + random(-0.3, 0.3)}rad) scale(${layer.size * 0.8})` : `scale(${layer.size * 0.8})`
+                                        },
+                                        {
+                                            left: `${x + vx * 1.1}px`,
+                                            bottom: `${y + vy * 1.1 - gravityEffect * 2}px`,
+                                            opacity: 0,
+                                            transform: isLine ? `rotate(${angle + random(-0.5, 0.5)}rad) scale(0)` : `scale(0)`
+                                        }
+                                    ], {
+                                        duration: duration,
+                                        easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)'
+                                    });
+
+                                    animation.onfinish = () => {
+                                        particle.remove();
+                                    };
+                                }
+                            }, layer.delay);
+                        });
+                        break;
+                }
+
                 // 添加爆炸音效
                 playFireworkSound();
             }
-            
+
+            // 创建粒子
+            function createParticle(x, y, color) {
+                const particle = document.createElement('div');
+                particle.className = 'particle particle-dot';
+                particle.style.backgroundColor = color;
+                particle.style.left = `${x}px`;
+                particle.style.bottom = `${y}px`;
+                container.appendChild(particle);
+                return particle;
+            }
+
+            // 动画粒子
+            function animateParticle(particle, x, y, vx, vy) {
+                const gravityEffect = random(0, 25);
+                const duration = random(1.2, 2.0) * 1000;
+                const animation = particle.animate([
+                    {
+                        left: `${x}px`,
+                        bottom: `${y}px`,
+                        opacity: 1,
+                        transform: `scale(1)`
+                    },
+                    {
+                        left: `${x + vx}px`,
+                        bottom: `${y + vy - gravityEffect}px`,
+                        opacity: 0.8,
+                        transform: `scale(0.8)`
+                    },
+                    {
+                        left: `${x + vx * 1.1}px`,
+                        bottom: `${y + vy * 1.1 - gravityEffect * 2}px`,
+                        opacity: 0,
+                        transform: `scale(0)`
+                    }
+                ], {
+                    duration: duration,
+                    easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)'
+                });
+
+                animation.onfinish = () => {
+                    particle.remove();
+                };
+            }
+
             // 播放烟花音效
             function playFireworkSound() {
                 try {
                     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     const oscillator = audioContext.createOscillator();
                     const gainNode = audioContext.createGain();
-                    
+
                     oscillator.type = 'sine';
                     oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
                     oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.5);
-                    
+
                     gainNode.gain.setValueAtTime(0, audioContext.currentTime);
                     gainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.05);
                     gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
-                    
+
                     oscillator.connect(gainNode);
                     gainNode.connect(audioContext.destination);
-                    
+
                     oscillator.start();
                     oscillator.stop(audioContext.currentTime + 0.5);
                 } catch (error) {
@@ -274,27 +358,23 @@
             // 创建1-3个随机烟花
             function createRandomFireworks() {
                 if (isCreatingFireworks) return;
-                
+
                 isCreatingFireworks = true;
-                
-                // 决定创建1个、2个还是3个烟花
+
                 const fireworkCount = Math.floor(Math.random() * 3) + 1;
-                
+
                 for (let i = 0; i < fireworkCount; i++) {
                     const x = random(50, window.innerWidth - 50);
                     const targetY = random(window.innerHeight * 0.3, window.innerHeight * 0.7);
                     const color = colors[Math.floor(Math.random() * colors.length)];
-                    
-                    // 烟花起始位置稍微随机化
+
                     const startX = x + random(-50, 50);
-                    
-                    // 多个烟花之间添加小延迟
+
                     setTimeout(() => {
                         createFirework(startX, 0, x, targetY, color);
                     }, i * 800);
                 }
-                
-                // 允许下一次创建
+
                 setTimeout(() => {
                     isCreatingFireworks = false;
                 }, 1500);
@@ -305,21 +385,18 @@
                 const x = e.clientX;
                 const targetY = random(window.innerHeight * 0.3, window.innerHeight * 0.7);
                 const color = colors[Math.floor(Math.random() * colors.length)];
-                
-                // 烟花起始位置稍微随机化
+
                 const startX = x + random(-50, 50);
                 createFirework(startX, 0, x, targetY, color);
             });
 
             // 页面加载后立即开始自动播放烟花
             animationInterval = setInterval(createRandomFireworks, random(1500, 3000));
-            
+
             // 窗口大小变化时调整
             window.addEventListener('resize', () => {
-                // 清除现有定时器
                 if (animationInterval) clearInterval(animationInterval);
-                
-                // 创建新的定时器，避免窗口变化时产生过多烟花
+
                 setTimeout(() => {
                     animationInterval = setInterval(createRandomFireworks, random(1500, 3000));
                 }, 500);
@@ -328,26 +405,21 @@
             // 随机彩色字母动画
             function animateText() {
                 const textElement = document.getElementById('birthdayText');
-                
-                // 分成三行（新增第三行 "MR.X"）
+
                 const lines = ["HAPPY", "BIRTHDAY", "MR.X"];
                 let totalDelay = 0;
-                
-                // 清空文本元素
+
                 textElement.innerHTML = '';
-                
-                // 为每一行创建容器
+
                 lines.forEach((lineText, lineIndex) => {
                     const lineElement = document.createElement('div');
                     lineElement.className = 'line';
                     textElement.appendChild(lineElement);
-                    
-                    // 创建字母数组并打乱顺序（记录原始索引）
+
                     const shuffledChars = shuffleArray(
                         lineText.split('').map((char, index) => ({ char, index }))
                     );
-                    
-                    // 创建占位元素保持布局
+
                     const placeholders = [];
                     for (let i = 0; i < lineText.length; i++) {
                         const placeholder = document.createElement('span');
@@ -356,47 +428,39 @@
                         lineElement.appendChild(placeholder);
                         placeholders.push(placeholder);
                     }
-                    
-                    // 为每个字母创建span元素并添加动画
+
                     let lineDelay = 0;
-                    
+
                     shuffledChars.forEach((item, i) => {
                         const letter = document.createElement('span');
                         letter.className = 'letter';
                         letter.textContent = item.char;
-                        
-                        // 随机颜色
+
                         const randomColor = colors[Math.floor(Math.random() * colors.length)];
                         letter.style.color = randomColor;
-                        
-                        // 添加文字阴影增强效果
+
                         letter.style.textShadow = `0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px ${randomColor}40`;
-                        
-                        // 减小行与行之间的延迟
-                        const randomDelay = random(0.5, 1.5); // 原先是 random(1, 2)
+
+                        const randomDelay = random(0.5, 1.5);
                         lineDelay += randomDelay;
-                        
-                        // 减小行与行之间的间隔
-                        const totalLetterDelay = totalDelay + lineDelay + (lineIndex * 1.5); // 原先是 (lineIndex * 2)
-                        
-                        // 使用原始索引确保字母出现在正确位置
+
+                        const totalLetterDelay = totalDelay + lineDelay + (lineIndex * 1.5);
+
                         if (placeholders[item.index]) {
                             placeholders[item.index].replaceWith(letter);
                         } else {
                             lineElement.appendChild(letter);
                         }
-                        
+
                         letter.style.animation = `fadeIn 0.5s ease-out ${totalLetterDelay}s forwards`;
                     });
-                    
-                    // 更新总行延迟
+
                     totalDelay += lineDelay;
                 });
-                
-                // 添加总体淡入效果
+
                 textElement.style.opacity = '1';
             }
-            
+
             // 添加字母动画样式
             const style = document.createElement('style');
             style.textContent = `
@@ -412,10 +476,11 @@
                 }
             `;
             document.head.appendChild(style);
-            
+
             // 3秒后开始字母动画
             setTimeout(animateText, 3000);
         });
     </script>
 </body>
+
 </html>
