@@ -53,11 +53,37 @@
                 transform: rotate(0deg);
                 background: linear-gradient(to top, rgba(255,255,255,0), rgba(255,255,255,0.8));
             }
+            .birthday-text {
+                position: fixed;
+                top: 15%;
+                left: 0;
+                right: 0;
+                text-align: center;
+                font-size: clamp(2rem, 8vw, 5rem);
+                font-weight: bold;
+                z-index: 10;
+                opacity: 0;
+                display: flex;
+                flex-direction: column; /* 修改为垂直排列 */
+                align-items: center;
+            }
+            .line {
+                display: flex;
+                justify-content: center;
+                margin: 0.5rem 0;
+            }
+            .letter {
+                display: inline-block;
+                opacity: 0;
+                transform: translateY(20px);
+                transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            }
         }
     </style>
 </head>
 <body class="bg-gradient-to-b from-gray-900 to-black min-h-screen overflow-hidden">
     <div id="fireworksContainer" class="fixed inset-0 z-0"></div>
+    <div class="birthday-text" id="birthdayText"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -235,14 +261,14 @@
                 }
             }
 
-            // 创建1-2个随机烟花
+            // 创建1-3个随机烟花
             function createRandomFireworks() {
                 if (isCreatingFireworks) return;
                 
                 isCreatingFireworks = true;
                 
-                // 决定创建1个还是2个烟花
-                const fireworkCount = Math.random() > 0.5 ? 2 : 1;
+                // 决定创建1个、2个还是3个烟花
+                const fireworkCount = Math.floor(Math.random() * 3) + 1;
                 
                 for (let i = 0; i < fireworkCount; i++) {
                     const x = random(50, window.innerWidth - 50);
@@ -275,8 +301,8 @@
                 createFirework(startX, 0, x, targetY, color);
             });
 
-            // 页面加载后立即开始自动播放
-            animationInterval = setInterval(createRandomFireworks, random(2500, 4500));
+            // 页面加载后立即开始自动播放烟花
+            animationInterval = setInterval(createRandomFireworks, random(1500, 3000));
             
             // 窗口大小变化时调整
             window.addEventListener('resize', () => {
@@ -285,9 +311,79 @@
                 
                 // 创建新的定时器，避免窗口变化时产生过多烟花
                 setTimeout(() => {
-                    animationInterval = setInterval(createRandomFireworks, random(2500, 4500));
+                    animationInterval = setInterval(createRandomFireworks, random(1500, 3000));
                 }, 500);
             });
+
+            // 随机彩色字母动画
+            function animateText() {
+                const textElement = document.getElementById('birthdayText');
+                
+                // 分成两行
+                const lines = ["HAPPY", "BIRTHDAY"];
+                let totalDelay = 0;
+                
+                // 清空文本元素
+                textElement.innerHTML = '';
+                
+                // 为每一行创建容器
+                lines.forEach((lineText, lineIndex) => {
+                    const lineElement = document.createElement('div');
+                    lineElement.className = 'line';
+                    textElement.appendChild(lineElement);
+                    
+                    // 为每个字母创建span元素并添加动画
+                    let lineDelay = 0;
+                    
+                    for (let i = 0; i < lineText.length; i++) {
+                        const letter = document.createElement('span');
+                        letter.className = 'letter';
+                        letter.textContent = lineText[i];
+                        
+                        // 随机颜色
+                        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                        letter.style.color = randomColor;
+                        
+                        // 添加文字阴影增强效果
+                        letter.style.textShadow = `0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px ${randomColor}40`;
+                        
+                        // 每个字母随机1-2秒的延迟
+                        const randomDelay = random(1, 2);
+                        lineDelay += randomDelay;
+                        
+                        // 总延迟 = 行延迟 + 行索引 * 2秒（行与行之间有额外的间隔）
+                        const totalLetterDelay = totalDelay + lineDelay + (lineIndex * 2);
+                        
+                        letter.style.animation = `fadeIn 0.5s ease-out ${totalLetterDelay}s forwards`;
+                        lineElement.appendChild(letter);
+                    }
+                    
+                    // 更新总行延迟
+                    totalDelay += lineDelay;
+                });
+                
+                // 添加总体淡入效果
+                textElement.style.opacity = '1';
+            }
+            
+            // 添加字母动画样式
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // 3秒后开始字母动画
+            setTimeout(animateText, 3000);
         });
     </script>
 </body>
