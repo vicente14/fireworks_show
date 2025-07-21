@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+<!DOCTYPE html>
+<html lang="zh-CN">
 
 <head>
     <meta charset="UTF-8">
@@ -273,13 +275,13 @@
                 }
             }
 
-            // 创建1-3个随机烟花
+            // 创建2-4个随机烟花
             function createRandomFireworks() {
                 if (isCreatingFireworks) return;
 
                 isCreatingFireworks = true;
 
-                const fireworkCount = Math.floor(Math.random() * 3) + 1;
+                const fireworkCount = Math.floor(Math.random() * 3) + 2;
 
                 for (let i = 0; i < fireworkCount; i++) {
                     const x = random(50, window.innerWidth - 50);
@@ -400,5 +402,7 @@
         });
     </script>
 </body>
+
+</html>
 
 </html>
