@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -82,11 +81,9 @@
         }
     </style>
 </head>
-
 <body class="bg-gradient-to-b from-gray-900 to-black min-h-screen overflow-hidden">
     <div id="fireworksContainer" class="fixed inset-0 z-0"></div>
     <div class="birthday-text" id="birthdayText"></div>
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const container = document.getElementById('fireworksContainer');
@@ -143,7 +140,7 @@
 
                     animation.onfinish = () => {
                         // 随机选择爆炸类型
-                        const explosionTypes = ['ring', 'pulse', 'star'];
+                        const explosionTypes = ['ring', 'pulse', 'star', 'heart'];
                         const explosionType = explosionTypes[Math.floor(Math.random() * explosionTypes.length)];
                         explodeFirework(targetX, targetY, color, explosionType);
                         firework.remove();
@@ -168,7 +165,7 @@
                         break;
                     case 'pulse':
                         // 脉冲爆炸
-                        const pulseCount = 3;
+                        const pulseCount = 2;
                         const pulseDelay = 200;
                         const pulseParticleCount = 40;
                         for (let j = 0; j < pulseCount; j++) {
@@ -186,9 +183,12 @@
                         break;
                     case 'star':
                         // 星形爆炸
-                        const starPoints = 5;
+                        const starPoints = 12;
                         const starRadius = 120;
                         const starInnerRadius = 50;
+                        const extraStarParticles = 30;
+                        
+                        // 原始星形粒子
                         for (let i = 0; i < starPoints * 2; i++) {
                             const radius = i % 2 === 0 ? starRadius : starInnerRadius;
                             const angle = (i / (starPoints * 2)) * (Math.PI * 2);
@@ -196,6 +196,40 @@
                             const vx = Math.cos(angle) * radius;
                             const vy = Math.sin(angle) * radius;
                             animateParticle(particle, x, y, vx, vy);
+                        }
+                        
+                        // 额外随机粒子
+                        for (let i = 0; i < extraStarParticles; i++) {
+                            const angle = random(0, Math.PI * 2);
+                            const radius = random(30, starRadius);
+                            const particle = createParticle(x, y, color);
+                            const vx = Math.cos(angle) * radius;
+                            const vy = Math.sin(angle) * radius;
+                            animateParticle(particle, x, y, vx, vy);
+                        }
+                        break;
+                    case 'heart':
+                        // 心形爆炸（完全修正方向）
+                        const heartParticles = 150; // 增加粒子数量
+                        const heartScale = 20; // 调整大小
+                        const speedFactor = 0.3; // 控制速度
+                        const centerOffset = 30; // 心形向上偏移量，使其居中
+                        
+                        for (let i = 0; i < heartParticles; i++) {
+                            // 参数t从0到2π
+                            const t = (i / heartParticles) * Math.PI * 2;
+                            // 心形曲线参数方程（已修正）
+                            const xCoord = 16 * Math.pow(Math.sin(t), 3);
+                            // 核心修正：翻转Y坐标并向上偏移，适应屏幕坐标系
+                            const yCoord = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t)) + 2;
+                            
+                            // 计算粒子速度（关键修正：vy使用减法而非加法）
+                            const vx = xCoord * heartScale * speedFactor;
+                            const vy = -yCoord * heartScale * speedFactor + centerOffset;
+                            
+                            const particle = createParticle(x, y, color);
+                            // 延长动画时间
+                            animateParticle(particle, x, y, vx, vy, { duration: random(2.2, 3.0) * 1000 });
                         }
                         break;
                 }
@@ -215,10 +249,10 @@
                 return particle;
             }
 
-            // 动画粒子
-            function animateParticle(particle, x, y, vx, vy) {
-                const gravityEffect = random(0, 25);
-                const duration = random(1.2, 2.0) * 1000;
+            // 动画粒子（支持自定义持续时间）
+            function animateParticle(particle, x, y, vx, vy, options = {}) {
+                const gravityEffect = random(0, 15); // 减小重力影响，避免心形变形
+                const duration = options.duration || random(1.2, 2.0) * 1000;
                 const animation = particle.animate([
                     {
                         left: `${x}px`,
@@ -278,14 +312,12 @@
                 if (isCreatingFireworks) return;
 
                 isCreatingFireworks = true;
-
                 const fireworkCount = Math.floor(Math.random() * 3) + 2;
 
                 for (let i = 0; i < fireworkCount; i++) {
                     const x = random(50, window.innerWidth - 50);
-                    const targetY = random(window.innerHeight * 0.3, window.innerHeight * 0.7);
+                    const targetY = random(window.innerHeight * 0.3, window.innerHeight * 0.6); // 降低爆炸高度，便于观察心形
                     const color = colors[Math.floor(Math.random() * colors.length)];
-
                     const startX = x + random(-50, 50);
 
                     setTimeout(() => {
@@ -301,9 +333,8 @@
             // 点击事件处理
             container.addEventListener('click', (e) => {
                 const x = e.clientX;
-                const targetY = random(window.innerHeight * 0.3, window.innerHeight * 0.7);
+                const targetY = random(window.innerHeight * 0.3, window.innerHeight * 0.6);
                 const color = colors[Math.floor(Math.random() * colors.length)];
-
                 const startX = x + random(-50, 50);
                 createFirework(startX, 0, x, targetY, color);
             });
@@ -314,7 +345,6 @@
             // 窗口大小变化时调整
             window.addEventListener('resize', () => {
                 if (animationInterval) clearInterval(animationInterval);
-
                 setTimeout(() => {
                     animationInterval = setInterval(createRandomFireworks, random(1500, 3000));
                 }, 500);
@@ -323,12 +353,10 @@
             // 随机彩色字母动画
             function animateText() {
                 const textElement = document.getElementById('birthdayText');
-
                 const lines = ["HAPPY", "BIRTHDAY", "MR.X"];
                 let totalDelay = 0;
 
                 textElement.innerHTML = '';
-
                 lines.forEach((lineText, lineIndex) => {
                     const lineElement = document.createElement('div');
                     lineElement.className = 'line';
@@ -348,20 +376,16 @@
                     }
 
                     let lineDelay = 0;
-
                     shuffledChars.forEach((item, i) => {
                         const letter = document.createElement('span');
                         letter.className = 'letter';
                         letter.textContent = item.char;
-
                         const randomColor = colors[Math.floor(Math.random() * colors.length)];
                         letter.style.color = randomColor;
-
                         letter.style.textShadow = `0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px ${randomColor}40`;
 
                         const randomDelay = random(0.5, 1.5);
                         lineDelay += randomDelay;
-
                         const totalLetterDelay = totalDelay + lineDelay + (lineIndex * 1.5);
 
                         if (placeholders[item.index]) {
@@ -383,14 +407,8 @@
             const style = document.createElement('style');
             style.textContent = `
                 @keyframes fadeIn {
-                    from {
-                        opacity: 0;
-                        transform: translateY(20px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
             `;
             document.head.appendChild(style);
@@ -400,5 +418,4 @@
         });
     </script>
 </body>
-
 </html>
