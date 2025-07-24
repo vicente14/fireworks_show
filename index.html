@@ -118,9 +118,9 @@
                     // 爆炸配置
                     this.explosionConfigs = {
                         ring: { particleCount: 60, radius: 100 },
-                        pulse: { particleCount: 40, pulseCount: 2, delay: 300 },
+                        pulse: { particleCount: 60, pulseCount: 2, delay: 300 },
                         star: { points: 12, radius: 120, innerRadius: 50, extraParticles: 30 },
-                        heart: { particleCount: 100, scale: 20, speed: 0.25, centerOffset: 30 }
+                        heart: { particleCount: 60, scale: 20, speed: 0.25, centerOffset: 30 }
                     };
 
                     this.init();
@@ -434,7 +434,7 @@
                 // 文字动画
                 animateText() {
                     const textElement = document.getElementById('birthdayText');
-                    const lines = ["HAPPY", "BIRTHDAY", "TO YOU"];
+                    const lines = ["HAPPY", "BIRTHDAY", "to_U"];
                     let totalDelay = 5;
 
                     textElement.innerHTML = '';
