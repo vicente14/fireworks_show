@@ -89,14 +89,56 @@
                 background: white;
                 filter: blur(3px); /* 减小模糊程度 */
             }
+            .start-btn {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 100;
+                padding: 1.2rem 3rem;
+                font-size: 1.5rem;
+                font-weight: bold;
+                border-radius: 999px;
+                background: linear-gradient(135deg, #EC4899, #4F46E5);
+                color: white;
+                border: none;
+                cursor: pointer;
+                box-shadow: 0 0 20px rgba(79, 70, 229, 0.5);
+                transition: all 0.3s ease;
+            }
+            .start-btn:hover {
+                transform: translate(-50%, -50%) scale(1.05);
+                box-shadow: 0 0 30px rgba(79, 70, 229, 0.8);
+            }
+            .countdown {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 100;
+                font-size: clamp(4rem, 20vw, 12rem);
+                font-weight: bold;
+                color: white;
+                text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(236, 72, 153, 0.6);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
         }
     </style>
 </head>
 <body class="bg-gradient-to-b from-gray-900 to-black min-h-screen overflow-hidden">
     <div id="fireworksContainer" class="fixed inset-0 z-0"></div>
     <div class="birthday-text" id="birthdayText"></div>
+    <!-- 开始按钮 -->
+    <button class="start-btn" id="startBtn">开始庆祝</button>
+    <!-- 倒计时显示 -->
+    <div class="countdown" id="countdown"></div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // 全局状态控制
+            let isCelebrating = false;
+            
             // 烟花管理器类封装
             class FireworkManager {
                 constructor(containerId) {
@@ -111,7 +153,7 @@
                     this.MAX_FIREWORKS = 4;
                     
                     // 动画参数调整
-                    this.animationActive = true;
+                    this.animationActive = false; // 初始设为false，等待按钮触发
                     this.audioContext = null;
                     this.ascentSpeedFactor = 1;
                     this.particleLifetimeFactor = 1.5;
@@ -130,9 +172,48 @@
                 // 初始化
                 init() {
                     this.setupEventListeners();
-                    this.scheduleNextFirework();
                     this.initAudioContext();
-                    this.animateText();
+                    // 不自动启动，等待按钮触发
+                }
+
+                // 启动庆祝（按钮点击后调用）
+                startCelebration() {
+                    if (isCelebrating) return;
+                    isCelebrating = true;
+                    
+                    const startBtn = document.getElementById('startBtn');
+                    const countdownEl = document.getElementById('countdown');
+                    
+                    // 隐藏按钮
+                    startBtn.style.opacity = '0';
+                    startBtn.style.pointerEvents = 'none';
+                    setTimeout(() => {
+                        startBtn.style.display = 'none';
+                    }, 300);
+                    
+                    // 倒计时3秒
+                    let count = 3;
+                    countdownEl.style.opacity = '1';
+                    countdownEl.textContent = count;
+                    
+                    const countdownInterval = setInterval(() => {
+                        count--;
+                        if (count > 0) {
+                            countdownEl.textContent = count;
+                            // 播放倒计时音效
+                            this.playCountdownSound();
+                        } else {
+                            clearInterval(countdownInterval);
+                            // 倒计时结束，隐藏倒计时，开始动画
+                            countdownEl.style.opacity = '0';
+                            setTimeout(() => {
+                                countdownEl.style.display = 'none';
+                                this.animationActive = true;
+                                this.scheduleNextFirework();
+                                this.animateText();
+                            }, 300);
+                        }
+                    }, 1000);
                 }
 
                 // 随机数生成
@@ -177,7 +258,7 @@
 
                 // 创建烟花
                 createFirework(x, y, targetX, targetY, color) {
-                    if (this.activeFireworks >= this.MAX_FIREWORKS) return;
+                    if (!this.animationActive || this.activeFireworks >= this.MAX_FIREWORKS) return;
                     
                     this.activeFireworks++;
                     const firework = document.createElement('div');
@@ -393,6 +474,32 @@
                     }
                 }
 
+                // 播放倒计时音效
+                playCountdownSound() {
+                    if (!this.audioContext) return;
+                    
+                    try {
+                        const oscillator = this.audioContext.createOscillator();
+                        const gainNode = this.audioContext.createGain();
+
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(400, this.audioContext.currentTime + 0.3);
+
+                        gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                        gainNode.gain.linearRampToValueAtTime(0.5, this.audioContext.currentTime + 0.05);
+                        gainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.3);
+
+                        oscillator.connect(gainNode);
+                        gainNode.connect(this.audioContext.destination);
+
+                        oscillator.start();
+                        oscillator.stop(this.audioContext.currentTime + 0.3);
+                    } catch (error) {
+                        console.warn('无法播放倒计时音效:', error);
+                    }
+                }
+
                 // 初始化音频上下文
                 initAudioContext() {
                     try {
@@ -405,7 +512,7 @@
 
                 // 创建随机烟花
                 createRandomFireworks() {
-                    if (this.activeFireworks >= this.MAX_FIREWORKS) return;
+                    if (!this.animationActive || this.activeFireworks >= this.MAX_FIREWORKS) return;
                     
                     const fireworkCount = Math.floor(Math.random() * 2) + 1;
                     
@@ -434,8 +541,10 @@
 
                 // 文字动画
                 animateText() {
+                    if (!this.animationActive) return;
+                    
                     const textElement = document.getElementById('birthdayText');
-                    const lines = ["(◡ ‿ ◡ ✿)", "HAPPY_BIRTHDAY"];
+                    const lines = ["(◡ ‿ ◡ ✿)", "HAPPY_BIRTHDAY", "某某"];
                     let totalDelay = 4;
 
                     textElement.innerHTML = '';
@@ -490,8 +599,10 @@
 
                 // 设置事件监听器
                 setupEventListeners() {
-                    // 点击事件
+                    // 点击事件（仅在动画激活后有效）
                     this.container.addEventListener('click', (e) => {
+                        if (!this.animationActive) return;
+                        
                         const x = e.clientX;
                         const targetY = this.random(window.innerHeight * 0.3, window.innerHeight * 0.6);
                         const color = this.colors[Math.floor(Math.random() * this.colors.length)];
@@ -499,8 +610,10 @@
                         this.createFirework(startX, 0, x, targetY, color);
                     });
 
-                    // 触摸事件支持
+                    // 触摸事件支持（仅在动画激活后有效）
                     this.container.addEventListener('touchstart', (e) => {
+                        if (!this.animationActive) return;
+                        
                         e.preventDefault();
                         const touch = e.touches[0];
                         const x = touch.clientX;
@@ -512,6 +625,8 @@
 
                     // 窗口大小变化处理
                     window.addEventListener('resize', () => {
+                        if (!this.animationActive) return;
+                        
                         this.animationActive = false;
                         setTimeout(() => {
                             this.animationActive = true;
@@ -523,6 +638,15 @@
 
             // 初始化烟花管理器
             const fireworkManager = new FireworkManager('fireworksContainer');
+            
+            // 绑定开始按钮点击事件
+            document.getElementById('startBtn').addEventListener('click', () => {
+                // 激活音频上下文（浏览器要求用户交互后才能播放音频）
+                if (fireworkManager.audioContext && fireworkManager.audioContext.state === 'suspended') {
+                    fireworkManager.audioContext.resume();
+                }
+                fireworkManager.startCelebration();
+            });
         });
     </script>
 </body>
