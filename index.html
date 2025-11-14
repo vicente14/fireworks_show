@@ -105,10 +105,14 @@
                 cursor: pointer;
                 box-shadow: 0 0 20px rgba(79, 70, 229, 0.5);
                 transition: all 0.3s ease;
+                backdrop-filter: blur(5px);
             }
             .start-btn:hover {
                 transform: translate(-50%, -50%) scale(1.05);
                 box-shadow: 0 0 30px rgba(79, 70, 229, 0.8);
+            }
+            .start-btn.fade {
+                animation: fadeInOut 1s ease;
             }
             .countdown {
                 position: fixed;
@@ -123,14 +127,44 @@
                 opacity: 0;
                 transition: opacity 0.3s ease;
             }
+            /* 文案过渡动画 */
+            @keyframes fadeInOut {
+                0% { opacity: 0.3; transform: translate(-50%, -50%) scale(0.9); }
+                50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+                100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            }
+            /* 流星效果 */
+            .meteor {
+                position: fixed;
+                top: 15%;
+                right: 20%;
+                width: 80px;
+                height: 2px;
+                background: linear-gradient(90deg, transparent, white);
+                opacity: 0;
+                transform: rotate(-30deg);
+                box-shadow: 0 0 10px 1px rgba(255, 255, 255, 0.8);
+                z-index: 5;
+            }
+            .meteor.animate {
+                animation: meteorSlide 1.5s linear forwards;
+            }
+            @keyframes meteorSlide {
+                0% { opacity: 0; transform: rotate(-30deg) translateX(50px); }
+                20% { opacity: 1; }
+                80% { opacity: 1; }
+                100% { opacity: 0; transform: rotate(-30deg) translateX(-150px); }
+            }
         }
     </style>
 </head>
 <body class="bg-gradient-to-b from-gray-900 to-black min-h-screen overflow-hidden">
     <div id="fireworksContainer" class="fixed inset-0 z-0"></div>
     <div class="birthday-text" id="birthdayText"></div>
+    <!-- 流星效果元素 -->
+    <div class="meteor" id="meteor"></div>
     <!-- 开始按钮 -->
-    <button class="start-btn" id="startBtn">开始庆祝</button>
+    <button class="start-btn" id="startBtn">天色已暗</button>
     <!-- 倒计时显示 -->
     <div class="countdown" id="countdown"></div>
 
@@ -138,6 +172,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             // 全局状态控制
             let isCelebrating = false;
+            let clickCount = 0; // 点击次数计数器
+            const btnTexts = [
+                "暮色如墨，浸染天际...",
+                "抬头一瞥，一道亮光拖着极细的尾迹...",
+                "你合掌的刹那，愿已随光痕寄向星河..."
+            ]; // 三次点击的按钮文案
             
             // 烟花管理器类封装
             class FireworkManager {
@@ -153,7 +193,7 @@
                     this.MAX_FIREWORKS = 4;
                     
                     // 动画参数调整
-                    this.animationActive = false; // 初始设为false，等待按钮触发
+                    this.animationActive = false; // 初始设为false，等待三次点击后触发
                     this.audioContext = null;
                     this.ascentSpeedFactor = 1;
                     this.particleLifetimeFactor = 1.5;
@@ -173,25 +213,59 @@
                 init() {
                     this.setupEventListeners();
                     this.initAudioContext();
-                    // 不自动启动，等待按钮触发
+                    // 不自动启动，等待三次点击后触发
                 }
 
-                // 启动庆祝（按钮点击后调用）
-                startCelebration() {
+                // 处理按钮点击（三次点击逻辑）
+                handleBtnClick() {
                     if (isCelebrating) return;
-                    isCelebrating = true;
                     
                     const startBtn = document.getElementById('startBtn');
+                    const meteor = document.getElementById('meteor');
+                    
+                    // 增加点击计数
+                    clickCount++;
+                    
+                    // 第一次点击：文案切换，无特效
+                    if (clickCount === 1) {
+                        startBtn.textContent = btnTexts[1];
+                        startBtn.classList.add('fade');
+                        // 移除动画类防止重复触发
+                        setTimeout(() => startBtn.classList.remove('fade'), 1000);
+                    }
+                    // 第二次点击：显示流星特效，文案切换
+                    else if (clickCount === 2) {
+                        startBtn.textContent = btnTexts[2];
+                        startBtn.classList.add('fade');
+                        // 触发流星动画
+                        meteor.classList.add('animate');
+                        // 播放流星音效
+                        this.playMeteorSound();
+                        // 重置流星动画
+                        setTimeout(() => {
+                            startBtn.classList.remove('fade');
+                            meteor.classList.remove('animate');
+                        }, 1500);
+                    }
+                    // 第三次点击：开始倒计时
+                    else if (clickCount === 3) {
+                        // 隐藏按钮
+                        startBtn.style.opacity = '0';
+                        startBtn.style.pointerEvents = 'none';
+                        setTimeout(() => {
+                            startBtn.style.display = 'none';
+                        }, 300);
+                        
+                        // 启动倒计时
+                        this.startCountdown();
+                    }
+                }
+
+                // 启动倒计时
+                startCountdown() {
                     const countdownEl = document.getElementById('countdown');
                     
-                    // 隐藏按钮
-                    startBtn.style.opacity = '0';
-                    startBtn.style.pointerEvents = 'none';
-                    setTimeout(() => {
-                        startBtn.style.display = 'none';
-                    }, 300);
-                    
-                    // 倒计时3秒
+                    // 显示倒计时
                     let count = 3;
                     countdownEl.style.opacity = '1';
                     countdownEl.textContent = count;
@@ -500,6 +574,32 @@
                     }
                 }
 
+                // 播放流星音效
+                playMeteorSound() {
+                    if (!this.audioContext) return;
+                    
+                    try {
+                        const oscillator = this.audioContext.createOscillator();
+                        const gainNode = this.audioContext.createGain();
+
+                        oscillator.type = 'sawtooth';
+                        oscillator.frequency.setValueAtTime(600, this.audioContext.currentTime);
+                        oscillator.frequency.exponentialRampToValueAtTime(200, this.audioContext.currentTime + 1.2);
+
+                        gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                        gainNode.gain.linearRampToValueAtTime(0.3, this.audioContext.currentTime + 0.1);
+                        gainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 1.2);
+
+                        oscillator.connect(gainNode);
+                        gainNode.connect(this.audioContext.destination);
+
+                        oscillator.start();
+                        oscillator.stop(this.audioContext.currentTime + 1.2);
+                    } catch (error) {
+                        console.warn('无法播放流星音效:', error);
+                    }
+                }
+
                 // 初始化音频上下文
                 initAudioContext() {
                     try {
@@ -544,7 +644,7 @@
                     if (!this.animationActive) return;
                     
                     const textElement = document.getElementById('birthdayText');
-                    const lines = ["(◡ ‿ ◡ ✿)", "HAPPY_BIRTHDAY", "某某"];
+                    const lines = ["(◡ ‿ ◡ ✿)", "HAPPY_BIRTHDAY", "愿某某心想事成"];
                     let totalDelay = 4;
 
                     textElement.innerHTML = '';
@@ -645,12 +745,13 @@
                 if (fireworkManager.audioContext && fireworkManager.audioContext.state === 'suspended') {
                     fireworkManager.audioContext.resume();
                 }
-                fireworkManager.startCelebration();
+                fireworkManager.handleBtnClick();
             });
         });
     </script>
 </body>
 </html>
+
 
 
 
