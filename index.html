@@ -106,6 +106,7 @@
                 box-shadow: 0 0 20px rgba(79, 70, 229, 0.5);
                 transition: all 0.3s ease;
                 backdrop-filter: blur(5px);
+                white-space: nowrap; /* 防止文字换行 */
             }
             .start-btn:hover {
                 transform: translate(-50%, -50%) scale(1.05);
@@ -164,7 +165,7 @@
     <!-- 流星效果元素 -->
     <div class="meteor" id="meteor"></div>
     <!-- 开始按钮 -->
-    <button class="start-btn" id="startBtn">天色已暗</button>
+    <button class="start-btn" id="startBtn">暮色如墨，浸染天际...</button>
     <!-- 倒计时显示 -->
     <div class="countdown" id="countdown"></div>
 
@@ -174,10 +175,10 @@
             let isCelebrating = false;
             let clickCount = 0; // 点击次数计数器
             const btnTexts = [
-                "暮色如墨，浸染天际...",
-                "抬头一瞥，一道亮光拖着极细的尾迹...",
-                "你合掌的刹那，愿已随光痕寄向星河..."
-            ]; // 三次点击的按钮文案
+                "暮色如墨，浸染天际...",  // 初始文案（第0句）
+                "抬头一瞥，一道亮光拖着极细的尾迹...",  // 第一次点击后（第1句）- 显示流星
+                "你合掌的刹那，愿已随光痕寄向星河..."   // 第二次点击后（第2句）- 无流星
+            ]; 
             
             // 烟花管理器类封装
             class FireworkManager {
@@ -193,7 +194,7 @@
                     this.MAX_FIREWORKS = 4;
                     
                     // 动画参数调整
-                    this.animationActive = false; // 初始设为false，等待三次点击后触发
+                    this.animationActive = false;
                     this.audioContext = null;
                     this.ascentSpeedFactor = 1;
                     this.particleLifetimeFactor = 1.5;
@@ -213,10 +214,16 @@
                 init() {
                     this.setupEventListeners();
                     this.initAudioContext();
-                    // 不自动启动，等待三次点击后触发
+                    // 页面加载时初始按钮淡入动画
+                    setTimeout(() => {
+                        document.getElementById('startBtn').classList.add('fade');
+                        setTimeout(() => {
+                            document.getElementById('startBtn').classList.remove('fade');
+                        }, 1000);
+                    }, 300);
                 }
 
-                // 处理按钮点击（三次点击逻辑）
+                // 处理按钮点击（核心修复：重新规划点击逻辑）
                 handleBtnClick() {
                     if (isCelebrating) return;
                     
@@ -226,26 +233,31 @@
                     // 增加点击计数
                     clickCount++;
                     
-                    // 第一次点击：文案切换，无特效
+                    // 第一次点击：切换到第二句文案 + 同步显示流星
                     if (clickCount === 1) {
+                        // 1. 立即更新按钮文案为第二句（流星相关文案）
                         startBtn.textContent = btnTexts[1];
+                        // 2. 立即添加淡入动画
                         startBtn.classList.add('fade');
-                        // 移除动画类防止重复触发
-                        setTimeout(() => startBtn.classList.remove('fade'), 1000);
-                    }
-                    // 第二次点击：显示流星特效，文案切换
-                    else if (clickCount === 2) {
-                        startBtn.textContent = btnTexts[2];
-                        startBtn.classList.add('fade');
-                        // 触发流星动画
+                        // 3. 立即触发流星动画（与文案同步开始）
                         meteor.classList.add('animate');
-                        // 播放流星音效
+                        // 4. 立即播放流星音效
                         this.playMeteorSound();
-                        // 重置流星动画
+                        
+                        // 同步重置动画状态（1.5秒后，与流星动画时长一致）
                         setTimeout(() => {
                             startBtn.classList.remove('fade');
                             meteor.classList.remove('animate');
                         }, 1500);
+                    }
+                    // 第二次点击：切换到第三句文案（无流星）
+                    else if (clickCount === 2) {
+                        startBtn.textContent = btnTexts[2];
+                        startBtn.classList.add('fade');
+                        // 重置按钮动画
+                        setTimeout(() => {
+                            startBtn.classList.remove('fade');
+                        }, 1000);
                     }
                     // 第三次点击：开始倒计时
                     else if (clickCount === 3) {
@@ -265,7 +277,6 @@
                 startCountdown() {
                     const countdownEl = document.getElementById('countdown');
                     
-                    // 显示倒计时
                     let count = 3;
                     countdownEl.style.opacity = '1';
                     countdownEl.textContent = count;
@@ -274,11 +285,9 @@
                         count--;
                         if (count > 0) {
                             countdownEl.textContent = count;
-                            // 播放倒计时音效
                             this.playCountdownSound();
                         } else {
                             clearInterval(countdownInterval);
-                            // 倒计时结束，隐藏倒计时，开始动画
                             countdownEl.style.opacity = '0';
                             setTimeout(() => {
                                 countdownEl.style.display = 'none';
@@ -323,7 +332,6 @@
                     particle.style.opacity = '0';
                     this.particlePool.push(particle);
                     
-                    // 限制池大小，防止内存溢出
                     if (this.particlePool.length > 300) {
                         const extra = this.particlePool.splice(0, 100);
                         extra.forEach(p => p.remove());
@@ -342,11 +350,9 @@
                     firework.style.bottom = '0px';
                     this.container.appendChild(firework);
 
-                    // 计算上升距离和持续时间
                     const distance = Math.sqrt(Math.pow(targetX - x, 2) + Math.pow(targetY, 2));
                     const duration = this.random(2.0, 3.0) * (distance / 500) * this.ascentSpeedFactor;
 
-                    // 上升动画
                     setTimeout(() => {
                         firework.style.opacity = '1';
                         firework.style.transform = 'scale(1)';
@@ -373,7 +379,6 @@
                 explodeFirework(x, y, color, explosionType = 'ring') {
                     const config = this.explosionConfigs[explosionType];
                     
-                    // 添加爆炸闪光效果
                     this.createExplosionFlash(x, y);
                     
                     switch (explosionType) {
@@ -413,7 +418,6 @@
                             break;
                             
                         case 'star':
-                            // 星形粒子
                             for (let i = 0; i < config.points * 2; i++) {
                                 const radius = i % 2 === 0 ? config.radius : config.innerRadius;
                                 const angle = (i / (config.points * 2)) * (Math.PI * 2);
@@ -428,7 +432,6 @@
                                 this.animateParticle(particle, x, y, vx, vy);
                             }
                             
-                            // 额外随机粒子
                             for (let i = 0; i < config.extraParticles; i++) {
                                 const angle = this.random(0, Math.PI * 2);
                                 const radius = this.random(30, config.radius);
@@ -473,23 +476,23 @@
                 createExplosionFlash(x, y) {
                     const flash = document.createElement('div');
                     flash.className = 'explosion-flash';
-                    flash.style.left = `${x - 6}px`; // 配合新的宽度调整位置
+                    flash.style.left = `${x - 6}px`;
                     flash.style.bottom = `${y - 6}px`;
                     this.container.appendChild(flash);
                     
                     flash.animate([
-                        { opacity: 0.6, transform: 'scale(0.5)' }, // 降低初始透明度
-                        { opacity: 0.3, transform: 'scale(1.5)' }, // 减小缩放
+                        { opacity: 0.6, transform: 'scale(0.5)' },
+                        { opacity: 0.3, transform: 'scale(1.5)' },
                         { opacity: 0, transform: 'scale(2)' }
                     ], {
-                        duration: 700, // 缩短闪光持续时间
+                        duration: 700,
                         easing: 'ease-out'
                     }).onfinish = () => flash.remove();
                 }
 
                 // 粒子动画
                 animateParticle(particle, x, y, vx, vy, options = {}) {
-                    const gravityEffect = this.random(0, 8); // 减小重力影响
+                    const gravityEffect = this.random(0, 8);
                     const duration = options.duration || 
                         this.random(1.5, 2.2) * 1000 * this.particleLifetimeFactor;
                     
@@ -498,19 +501,19 @@
                             left: `${x}px`,
                             bottom: `${y}px`,
                             opacity: 1,
-                            transform: `scale(1)` // 保持初始清晰度
+                            transform: `scale(1)`
                         },
                         {
                             left: `${x + vx}px`,
                             bottom: `${y + vy - gravityEffect}px`,
-                            opacity: 0.9, // 更高的中间透明度
-                            transform: `scale(0.9)` // 减少缩放
+                            opacity: 0.9,
+                            transform: `scale(0.9)`
                         },
                         {
                             left: `${x + vx * 1.1}px`,
                             bottom: `${y + vy * 1.1 - gravityEffect * 2}px`,
                             opacity: 0,
-                            transform: `scale(0.5)` // 更慢消失
+                            transform: `scale(0.5)`
                         }
                     ], {
                         duration: duration,
@@ -699,7 +702,6 @@
 
                 // 设置事件监听器
                 setupEventListeners() {
-                    // 点击事件（仅在动画激活后有效）
                     this.container.addEventListener('click', (e) => {
                         if (!this.animationActive) return;
                         
@@ -710,7 +712,6 @@
                         this.createFirework(startX, 0, x, targetY, color);
                     });
 
-                    // 触摸事件支持（仅在动画激活后有效）
                     this.container.addEventListener('touchstart', (e) => {
                         if (!this.animationActive) return;
                         
@@ -723,7 +724,6 @@
                         this.createFirework(startX, 0, x, targetY, color);
                     }, { passive: false });
 
-                    // 窗口大小变化处理
                     window.addEventListener('resize', () => {
                         if (!this.animationActive) return;
                         
@@ -741,7 +741,6 @@
             
             // 绑定开始按钮点击事件
             document.getElementById('startBtn').addEventListener('click', () => {
-                // 激活音频上下文（浏览器要求用户交互后才能播放音频）
                 if (fireworkManager.audioContext && fireworkManager.audioContext.state === 'suspended') {
                     fireworkManager.audioContext.resume();
                 }
@@ -751,6 +750,7 @@
     </script>
 </body>
 </html>
+
 
 
 
