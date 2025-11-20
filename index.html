@@ -96,10 +96,11 @@
                 left: 50%;
                 transform: translate(-50%, -50%);
                 z-index: 100;
-                padding: 0.7rem 1.2rem; /* 调整内边距：上下略增，左右减小，适配换行 */
-                font-size: clamp(0.85rem, 3vw, 1rem); /* 字体再缩小，手机约0.85rem(13.6px) */
+                padding: 0.8rem 1.4rem; /* 适当增加内边距，配合字体放大 */
+                /* 字体放大：手机端最小1rem(16px)，最大1.2rem(19.2px)，视口占比4vw */
+                font-size: clamp(1rem, 4vw, 1.2rem); 
                 font-weight: 500; /* 字重保持柔和 */
-                border-radius: 20px; /* 圆角保持一致 */
+                border-radius: 24px; /* 适当增大圆角，视觉更协调 */
                 background-color: theme('colors.btnColor'); /* 纯色背景 */
                 color: white;
                 border: none;
@@ -107,13 +108,13 @@
                 box-shadow: 0 0 12px rgba(99, 102, 241, 0.5); /* 阴影保持 */
                 transition: all 0.3s ease;
                 backdrop-filter: blur(5px);
-                /* 关键调整：允许文字换行，解决溢出问题 */
-                white-space: normal; /* 取消强制不换行 */
+                white-space: normal; /* 允许文字换行 */
                 text-align: center;
-                min-width: 140px; /* 最小宽度略减 */
-                max-width: 85%; /* 最大宽度放宽到85%，适配手机屏幕 */
-                line-height: 1.4; /* 增加行高，换行后更易读 */
+                min-width: 150px; /* 最小宽度适当增加 */
+                max-width: 88%; /* 最大宽度放宽到88%，适配字体放大 */
+                line-height: 1.5; /* 增加行高，换行后更易读 */
                 word-wrap: break-word; /* 强制长单词/文字换行 */
+                letter-spacing: 0.5px; /* 轻微增加字间距，提升可读性 */
             }
             .start-btn:hover {
                 transform: translate(-50%, -50%) scale(1.05);
@@ -776,3 +777,4 @@
     </script>
 </body>
 </html>
+
